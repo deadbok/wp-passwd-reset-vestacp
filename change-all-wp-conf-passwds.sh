@@ -3,6 +3,7 @@
 EMAILS=(mbkg@commercialgroup.dk)
 
 DIRS=($1/*/web/*/public_html)
+echo "Dirs: ${DIRS[@]}"
 for DIR in "${DIRS[@]}"
 do
 	FILE=$DIR/wp-config.php
