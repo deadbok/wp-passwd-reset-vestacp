@@ -1,9 +1,18 @@
 #!/bin/bash
 
+#An list of addresses to send the info.
 EMAILS=(mbkg@commercialgroup.dk)
+#Path to the VestaCP command line tools.
 VESTA_PATH=/usr/local/vesta/bin/
-
+#Wildcard pattern for entering all sites.
 DIRS=($1/*/web/*/public_html)
+#The time is now.
+NOW=$(date +"%m_%d_%Y")
+#Name of the CSV file for lastpass
+CSVFILE=users-$2-${NOW}.csv
+
+#echo "url,type,username,password,hostname,extra,name,folder" > ${CSVFILE}
+echo > ${CSVFILE} 
 echo "Dirs: ${DIRS[@]}"
 for DIR in "${DIRS[@]}"
 do
@@ -23,7 +32,7 @@ do
 		DB_PASS=($(openssl rand -base64 12))
 		echo "Domain: $DOMAIN"
 		echo "Admin URL: $ADMIN_URL"
-		echo "VestaCP URL: $2"
+		echo "VestaCP URL: $2:8083"
 		echo "User: $USER"
 		echo "New user password: $PASS"
 		echo "New database password: $DB_PASS"
@@ -38,13 +47,13 @@ do
 		then
 			echo "ERROR: Failed changing user password"
 		fi
-		${VESTA_PATH}v-change-database-password ${USER}_db $DB_PASS
+		${VESTA_PATH}v-change-database-password ${USER}_db ${USER}_db ${DB_PASS}
 		if [ $? -ne 0 ]
 		then
 			echo "ERROR: Failed changing database password"
 		fi
-		
-		
+		echo "$2,:8083,$USER,$PASS,$DOMAIN,,,Vesta & FTP" >> ${CSVFILE}
+		echo "$2:3306,,${USER}_db,$DB_PASS,$DOMAIN,,,Database" >> ${CSVFILE}		
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
