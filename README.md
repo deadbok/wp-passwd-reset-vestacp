@@ -1,0 +1,1 @@
+Change passwords and salt of all WordPress installations on a VestaCP configured server to random ones.
