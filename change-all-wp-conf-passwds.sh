@@ -1,6 +1,7 @@
 #!/bin/bash
 
 EMAILS=(mbkg@commercialgroup.dk)
+VESTA_PATH=/usr/local/vesta/bin/
 
 DIRS=($1/*/web/*/public_html)
 echo "Dirs: ${DIRS[@]}"
@@ -32,12 +33,12 @@ do
 			echo "ERROR: Failed updating $FILE"
 		fi
 		echo "Changing user and database user using Vesta."
-		v-change-user-password $USER $PASS
+		${VESTA_PATH}v-change-user-password $USER $PASS
 		if [ $? -ne 0 ]
 		then
 			echo "ERROR: Failed changing user password"
 		fi
-		v-change-database-password ${USER}_db $DB_PASS
+		${VESTA_PATH}v-change-database-password ${USER}_db $DB_PASS
 		if [ $? -ne 0 ]
 		then
 			echo "ERROR: Failed changing database password"
