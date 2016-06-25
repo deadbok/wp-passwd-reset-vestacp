@@ -1,0 +1,10 @@
+Hej.
+
+Dette er en automatisk mail sendt da dit WordPress kodeord er blevet nulstillet.
+
+Domæne: ${DOMAIN}
+WordPress login addresse: ${WP_ADMIN_URL}
+WordPress bruger: ${WP_ADMIN_USER}
+Nyt WordPress kodeord: $WP_ADMIN_PASS
+
+"Keep it secret, keep it safe."
