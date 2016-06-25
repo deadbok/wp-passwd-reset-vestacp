@@ -195,7 +195,7 @@ do
 
 		if $WP_USER_PASS_RESET;
 		then		
-			for (( i=1; i<${N_USERS}; i++ ));
+			for (( i=0; i<${N_USERS}; i++ ));
 			do
 				WP_USER=${WP_USERS[$i]}
 				if [ $WP_USER != '' ];
