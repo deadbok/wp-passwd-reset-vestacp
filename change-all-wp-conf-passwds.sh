@@ -186,22 +186,25 @@ do
 		chown ${USER}:${USER} ${WP_CONF_FILE}.bak 	
 		#Export WordPress admin user
 		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE}
-		
+
+		#Skip admin		
 		USER_EMAILS=$(echo $(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
 		WP_USERS=$(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
+
 		N_USERS=${#USER_EMAILS[@]}
 
 		if $WP_USER_PASS_RESET;
 		then		
-			for (( i=0; i<${N_USERS}; i++ ));
+			for (( i=1; i<${N_USERS}; i++ ));
 			do
 				WP_USER=${WP_USERS[$i]}
-				if [ $WP_USER -ne '' ];
+				if [ $WP_USER != '' ];
 				then
 					WP_PASS=($(openssl rand -base64 12))
 					USER_EMAIL=${USER_EMAILS[$i]}
 					echo "WordPress user: ${WP_USER}"
-					echo "WordPress user password: ${WP_PASS}"
+					echo "Setting password to: ${WP_PASS}"
+					echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u root ${DB_USER}
 	
 					echo "Mailing credentials..."
 					for EMAIL in "${EMAILS[@]}"
