@@ -166,3 +166,9 @@ do
 	fi
 	echo
 done
+
+for EMAIL in "${EMAILS[@]}"
+do
+	echo "Mailing: ${EMAIL}"
+	echo '"Keep it secret, keep it safe."' | mail -s "Password reset Lastpass import file" -a ${CSVFILE} ${EMAIL} 
+done
