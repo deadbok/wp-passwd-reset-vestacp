@@ -24,7 +24,8 @@
 #SOFTWARE
 
 #An list of addresses to send the info.
-EMAILS=(mbkg@commercialgroup.dk)
+EMAILS=(some@email.com)
+
 #Path to the VestaCP command line tools.
 VESTA_PATH=/usr/local/vesta/bin/
 #Wildcard pattern for entering all sites.
@@ -36,8 +37,10 @@ CSVFILE=users-$2-${NOW}.csv
 LOGFILE=log-$2-${NOW}.log
 
 #WordPress admin user
-WP_ADMIN_USER=dev_adhus
-WP_ADMIN_EMAIL=info@commercialgroup.dk
+WP_ADMIN_USER=admin
+WP_ADMIN_EMAIL=some@email.com
+
+source config.sh
 
 function print_user_info()
 {
@@ -166,7 +169,12 @@ do
 		chown ${USER}:${USER} ${WP_CONF_FILE}
 		chown ${USER}:${USER} ${WP_CONF_FILE}.bak 	
 		#Export WordPress admin user
-		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE} 
+		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE}
+		
+		USER_EMAIL=$(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER})
+		echo "Mailing: ${USER_EMAIL}"
+		cat user_reset_mail.txt | mutt -s "Password nulstilling for $2" -- ${USER_EMAIL} 
+		 
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
@@ -176,5 +184,5 @@ done
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-cat reset_mail.txt | mutt -s "Password reset Lastpass import file" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} < $(eval(cat reset_mail.txt)) 
 done
