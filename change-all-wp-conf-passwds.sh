@@ -205,7 +205,7 @@ do
 						template user_reset_mail.txt | mutt -s "Password nulstilling for ${DOMAIN}" -- ${EMAIL} 
 					done
 					#Export WordPress user
-					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,$DOMAIN WordPress user,WordPress users" >> ${CSVFILE}
+					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users" >> ${CSVFILE}
 					#
 					#DO NOT uncomment the next line unless your want to send the WordPress credentials to the email adress of the user.
 					#
@@ -213,22 +213,23 @@ do
 					# template user_reset_mail.txt | mutt -s "Password nulstilling for ${DOMAIN}" -- ${USER_EMAIL} < $(eval ${USER_EMAIL_TMPL})
 				fi
 			done				
-		fi		 
+		fi
+		
+		echo					
+		echo "WordPress updated users: "
+		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
+		
+		#Set user of wp-config.php
+		chown ${USER}:${USER} ${WP_CONF_FILE}
+		chown ${USER}:${USER} ${WP_CONF_FILE}.bak 	
+		#Export WordPress admin user
+		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,${WP_ADMIN_USER} on $DOMAIN,WordPress administrator users" >> ${CSVFILE}
+						 
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
 	echo
 done
-
-echo					
-echo "WordPress updated users: "
-echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
-
-#Set user of wp-config.php
-chown ${USER}:${USER} ${WP_CONF_FILE}
-chown ${USER}:${USER} ${WP_CONF_FILE}.bak 	
-#Export WordPress admin user
-echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE}
 
 echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
