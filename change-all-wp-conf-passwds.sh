@@ -68,7 +68,7 @@ do
 		fi
 		#Export CSV data for user and database
 		echo "$2:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,Vesta & FTP users" >> ${CSVFILE}
-		echo "$2:3306,,${USER}_db,$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
+		echo "$2/phpmyadmin,,${USER}_db,$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
 		
 		#Get the table prefix.
 		head -n -2 ${FILE} > wp-config.php.tmp
