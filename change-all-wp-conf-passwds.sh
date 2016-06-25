@@ -27,9 +27,9 @@ do
 	if [ -f $FILE ];
 	then
 		echo Changing passwords and secrets for: $DIR
+		echo ------------------------------------------------------------------------------------------------------------------
 		#Split the path by '/' to isolate user and domain
 		REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
-		echo $REL_PATH
 		DIR_PARTS=(${REL_PATH//\// })
 		USER=${DIR_PARTS[0]}
 		DOMAIN=${DIR_PARTS[2]}
@@ -47,6 +47,8 @@ do
 		echo "New database password: $DB_PASS"
 		echo "WordPress admin user: $WP_ADMIN_USER"
 		echo "WordPress admin email: $WP_ADMIN_PASS"
+		echo ------------------------------------------------------------------------------------------------------------------
+		
 		python2 change-wp-conf-secrets.py ${FILE} -u ${USER}_db -n ${USER}_db -p ${DB_PASS} -s -b
 		if [ $? -ne 0 ]
 		then
@@ -64,8 +66,8 @@ do
 			echo "ERROR: Failed changing database password"
 		fi
 		#Export CSV data for user and database
-		echo "$2:8083,,$USER,$PASS,$DOMAIN,,,Vesta & FTP" >> ${CSVFILE}
-		echo "$2:3306,,${USER}_db,$DB_PASS,$DOMAIN,,,Database" >> ${CSVFILE}
+		echo "$2:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,Vesta & FTP users" >> ${CSVFILE}
+		echo "$2:3306,,${USER}_db,$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
 		
 		#Get the table prefix.
 		head -n -2 ${FILE} > wp-config.php.tmp
@@ -82,12 +84,12 @@ do
 
 		echo "Setting ${WP_ADMIN_USER} password to: ${WP_ADMIN_PASS}"
 		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
-				
+								
 		echo "WordPress updated users: "
 		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${USER}_db
 		
 		#Export WordPress admin user
-		echo "${ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,,WordPress administrator user" >> ${CSVFILE} 
+		echo "${ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE} 
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
