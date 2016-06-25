@@ -70,6 +70,19 @@ function print_wp_info()
 	echo
 }
 
+#http://stackoverflow.com/a/7633579
+function template()
+{
+    # usage: template file.tpl
+    while read -r line ; do
+            line=${line//\"/\\\"}
+            line=${line//\`/\\\`}
+            line=${line//\$/\\\$}
+            line=${line//\\\${/\${}
+            eval "echo \"$line\""; 
+    done < ${1}
+}
+
 #http://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself/3403786#3403786
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
 exec > >(tee -i ${LOGFILE})		
@@ -190,13 +203,13 @@ do
 				echo "WordPress user: ${WP_USER}"
 				echo "WordPress user password: ${WP_PASS}"
 				echo "Mailing: ${USER_EMAIL}"
-				echo '$(eval $USER_EMAIL_TMPL)' | mutt -s "Password nulstilling for ${DOMAIN}" -- ${EMAIL}
+				template user_reset_mail.txt | mutt -s "Password nulstilling for ${DOMAIN}" -- ${EMAIL}
 				#Export WordPress user
 				echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,$DOMAIN WordPress user,WordPress users" >> ${CSVFILE}
 				#
 				#DO NOT uncomment the next line unless your want to send the WordPress credentials to the email adress of the user.
 				#
-				# echo '$(eval $USER_EMAIL_TMPL)' | mutt -s "Password nulstilling for ${DOMAIN}" -- ${USER_EMAIL} < $(eval ${USER_EMAIL_TMPL})
+				# template user_reset_mail.txt | mutt -s "Password nulstilling for ${DOMAIN}" -- ${USER_EMAIL} < $(eval ${USER_EMAIL_TMPL})
 			done				
 		fi		 
 	else
@@ -210,5 +223,5 @@ EMAIL_TMPL=$(cat reset_mail.txt)
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	echo '$(eval $EMAIL_TMPL)' | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	template reset_mail.txt | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done
