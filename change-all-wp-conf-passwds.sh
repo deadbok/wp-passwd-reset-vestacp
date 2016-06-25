@@ -43,17 +43,18 @@ WP_ADMIN_EMAIL=some@email.com
 #Set to true, to reset all WordPress user passwords
 WP_USER_PASS_RESET=false
 
+VESTA_URL=$2:8083
+
 source config.sh
 
 function print_user_info()
 {
-	echo "VestaCP URL: $2:8083"
+echo "VestaCP URL: ${VESTA_URL}"
 	echo "User: $USER"
 	echo "New user password: $PASS"
 	echo
 }
 			
-
 function print_db_info()
 {
 	echo "PHPMyAdmin URL: ${PHPMYADMIN_URL}"
@@ -177,16 +178,6 @@ do
 		echo "Setting ${WP_ADMIN_USER} password to: ${WP_ADMIN_PASS}"
 		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${DB_USER}
 			
-		echo					
-		echo "WordPress updated users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
-	
-		#Set user of wp-config.php
-		chown ${USER}:${USER} ${WP_CONF_FILE}
-		chown ${USER}:${USER} ${WP_CONF_FILE}.bak 	
-		#Export WordPress admin user
-		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE}
-
 		#Skip admin		
 		USER_EMAILS=$(echo $(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
 		WP_USERS=$(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
@@ -202,6 +193,7 @@ do
 				then
 					WP_PASS=($(openssl rand -base64 12))
 					USER_EMAIL=${USER_EMAILS[$i]}
+					echo
 					echo "WordPress user: ${WP_USER}"
 					echo "Setting password to: ${WP_PASS}"
 					echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u root ${DB_USER}
@@ -227,6 +219,16 @@ do
 	fi
 	echo
 done
+
+echo					
+echo "WordPress updated users: "
+echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
+
+#Set user of wp-config.php
+chown ${USER}:${USER} ${WP_CONF_FILE}
+chown ${USER}:${USER} ${WP_CONF_FILE}.bak 	
+#Export WordPress admin user
+echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE}
 
 echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
