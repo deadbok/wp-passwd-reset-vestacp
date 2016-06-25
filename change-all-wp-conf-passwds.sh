@@ -78,10 +78,10 @@ do
 		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${USER}_db
 		
 		echo "Setting ${WP_ADMIN_USER} email to: ${WP_ADMIN_EMAIL}"
-		echo "UPDATE ${TABLE_PREFIX}_users SET user_email=${WP_ADMIN_EMAIL} WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
+		echo "UPDATE ${TABLE_PREFIX}users SET user_email='${WP_ADMIN_EMAIL}' WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
 
 		echo "Setting ${WP_ADMIN_USER} password to: ${WP_ADMIN_PASS}"
-		echo "UPDATE ${TABLE_PREFIX}_users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
+		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
 				
 		echo "WordPress updated users: "
 		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${USER}_db
