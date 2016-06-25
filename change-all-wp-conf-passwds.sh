@@ -27,7 +27,7 @@ function print_user_info()
 function print_db_info()
 {
 	echo "PHPMyAdmin URL: ${PHPMYADMIN_URL}"
-	echo "Database user: ${USER}_db"
+echo "Database user: ${DB_USER}"
 	echo "New database password: $DB_PASS"
 	echo
 }
@@ -55,13 +55,30 @@ do
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
 	USER=${DIR_PARTS[0]}
+	DB_USER=$(${VESTA_PATH}/v-list-databases ${USER} plain | cut -d" " -f1)
+	if [ $? -ne 0 ]
+	then
+		echo "ERROR: Getting database user"
+	fi
 	DOMAIN=${DIR_PARTS[2]}
 	PHPMYADMIN_URL="http://$2/phpmyadmin"
 	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 
 	PASS=($(openssl rand -base64 12))
+	if [ $? -ne 0 ]
+	then
+		echo "ERROR: Failed when creating user password"
+	fi
 	DB_PASS=($(openssl rand -base64 12))
+	if [ $? -ne 0 ]
+	then
+		echo "ERROR: Failed when creating database user password"
+	fi
 	WP_ADMIN_PASS=($(openssl rand -base64 12))
+		if [ $? -ne 0 ]
+	then
+		echo "ERROR: Failed when creating WordPress administrator user password"
+	fi
 	echo "Domain: $DOMAIN"
 	print_user_info
 	print_db_info
@@ -76,19 +93,19 @@ do
 	then
 		echo "ERROR: Failed changing user password"
 	fi
-	${VESTA_PATH}v-change-database-password ${USER} ${USER}_db ${DB_PASS}
+	${VESTA_PATH}v-change-database-password ${USER} ${DB_USER} ${DB_PASS}
 	if [ $? -ne 0 ]
 	then
 		echo "ERROR: Failed changing database password"
 	fi
 	#Export CSV data for user and database
 	echo "$2:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,Vesta & FTP users" >> ${CSVFILE}
-	echo "$2/phpmyadmin,,${USER}_db,$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
+	echo "$2/phpmyadmin,,${DB_USER},$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
 
 	if [ -f $WP_CONF_FILE ];
 	then
 		echo "Changing WordPress passwords, emails, and secrets"
-		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -u ${USER}_db -n ${USER}_db -p ${DB_PASS} -s -b
+		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -u ${DB_USER} -n ${DB_USER} -p ${DB_PASS} -s -b
 		if [ $? -ne 0 ]
 		then
 			echo "ERROR: Failed updating $FILE"
@@ -104,18 +121,18 @@ do
 		
 		echo
 		echo "WordPress users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${USER}_db
+		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
 		
 		echo
 		echo "Setting ${WP_ADMIN_USER} email to: ${WP_ADMIN_EMAIL}"
-		echo "UPDATE ${TABLE_PREFIX}users SET user_email='${WP_ADMIN_EMAIL}' WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
+		echo "UPDATE ${TABLE_PREFIX}users SET user_email='${WP_ADMIN_EMAIL}' WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${DB_USER}
 
 		echo "Setting ${WP_ADMIN_USER} password to: ${WP_ADMIN_PASS}"
-		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
+		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${DB_USER}
 			
 		echo					
 		echo "WordPress updated users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${USER}_db
+		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
 		
 		#Export WordPress admin user
 		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE} 
