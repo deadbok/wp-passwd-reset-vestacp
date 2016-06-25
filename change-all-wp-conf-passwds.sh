@@ -200,13 +200,19 @@ do
 				USER_EMAIL=${USER_EMAILS[$i]}
 				echo "WordPress user: ${WP_USER}"
 				echo "WordPress user password: ${WP_PASS}"
-				echo "Mailing: ${USER_EMAIL}"
-				template user_reset_mail.txt | mutt -s "Password nulstilling for ${DOMAIN}" -- ${EMAIL}
+
+				echo "Mailing credentials..."
+				for EMAIL in "${EMAILS[@]}"
+				do
+					echo "Mailing: ${EMAIL}"
+					template user_reset_mail.txt | mutt -s "Password nulstilling for ${DOMAIN}" -- ${EMAIL} 
+				done
 				#Export WordPress user
 				echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,$DOMAIN WordPress user,WordPress users" >> ${CSVFILE}
 				#
 				#DO NOT uncomment the next line unless your want to send the WordPress credentials to the email adress of the user.
 				#
+				# echo "Mailing: ${USER_EMAIL}"
 				# template user_reset_mail.txt | mutt -s "Password nulstilling for ${DOMAIN}" -- ${USER_EMAIL} < $(eval ${USER_EMAIL_TMPL})
 			done				
 		fi		 
@@ -216,6 +222,7 @@ do
 	echo
 done
 
+echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
