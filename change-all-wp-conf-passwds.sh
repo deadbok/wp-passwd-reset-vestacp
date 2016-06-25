@@ -54,7 +54,7 @@ do
 		then
 			echo "ERROR: Failed updating $FILE"
 		fi
-		echo "Changing user and database user using Vesta."
+		echo "\nChanging user and database user using Vesta."
 		${VESTA_PATH}v-change-user-password $USER $PASS
 		if [ $? -ne 0 ]
 		then
@@ -74,17 +74,21 @@ do
 		echo "echo \$table_prefix; ?>" >> wp-config.php.tmp
 		TABLE_PREFIX=$(php wp-config.php.tmp)
 		rm wp-config.php.tmp
-		echo "Table prefix: ${TABLE_PREFIX}"	
+		echo
+		echo "WordPress database table prefix: ${TABLE_PREFIX}"	
 		
+		echo
 		echo "WordPress users: "
 		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${USER}_db
 		
+		echo
 		echo "Setting ${WP_ADMIN_USER} email to: ${WP_ADMIN_EMAIL}"
 		echo "UPDATE ${TABLE_PREFIX}users SET user_email='${WP_ADMIN_EMAIL}' WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
 
 		echo "Setting ${WP_ADMIN_USER} password to: ${WP_ADMIN_PASS}"
 		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${USER}_db
-								
+			
+		echo					
 		echo "WordPress updated users: "
 		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${USER}_db
 		
