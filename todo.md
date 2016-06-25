@@ -2,6 +2,7 @@
 
  * WordPress user password reset
  * Emails
- * CSV save
  * permissions
+ * WordPress email user new password
+ * Still change user password on none WordPress
  
