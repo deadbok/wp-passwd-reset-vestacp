@@ -179,8 +179,8 @@ do
 		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${DB_USER}
 			
 		#Skip admin		
-		USER_EMAILS=$(echo $(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
-		WP_USERS=$(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
+		USER_EMAILS=($(echo $(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- ))
+		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- ))
 
 		N_USERS=${#USER_EMAILS[@]}
 
