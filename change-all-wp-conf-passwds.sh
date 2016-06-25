@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #MIT License
 #
@@ -32,6 +32,7 @@ DIRS=($1/*/web/*/public_html)
 NOW=$(date +"%m_%d_%Y")
 #Name of the CSV file for lastpass
 CSVFILE=users-$2-${NOW}.csv
+LOGFILE=log-$2-${NOW}.log
 
 #WordPress admin user
 WP_ADMIN_USER=dev_adhus
@@ -49,7 +50,7 @@ function print_user_info()
 function print_db_info()
 {
 	echo "PHPMyAdmin URL: ${PHPMYADMIN_URL}"
-echo "Database user: ${DB_USER}"
+	echo "Database user: ${DB_USER}"
 	echo "New database password: $DB_PASS"
 	echo
 }
@@ -60,7 +61,11 @@ function print_wp_info()
 	echo "WordPress admin user: $WP_ADMIN_USER"
 	echo "WordPress admin email: $WP_ADMIN_PASS"
 	echo
-}		
+}
+
+#http://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself/3403786#3403786
+# Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
+exec > >(tee -i ${LOGFILE})		
 
 #Clear the CSV file
 #Add the header
@@ -170,5 +175,5 @@ done
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	echo '"Keep it secret, keep it safe."' | mutt -s "Password reset Lastpass import file" -a ${CSVFILE} -- ${EMAIL} 
+	cat reset_mail.txt | mutt -s "Password reset Lastpass import file" -a ${CSVFILE} -- ${EMAIL} 
 done
