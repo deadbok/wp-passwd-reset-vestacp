@@ -175,5 +175,5 @@ done
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	cat reset_mail.txt | mutt -s "Password reset Lastpass import file" -a ${CSVFILE} -- ${EMAIL} 
+cat reset_mail.txt | mutt -s "Password reset Lastpass import file" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done
