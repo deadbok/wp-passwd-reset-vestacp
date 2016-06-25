@@ -1,4 +1,4 @@
 .project
 .pydevproject
 *.pyc
-/-s1.commercialgroup.dk-06_25_2016.csv
+*.csv

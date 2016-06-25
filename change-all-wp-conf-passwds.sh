@@ -12,7 +12,8 @@ NOW=$(date +"%m_%d_%Y")
 CSVFILE=users-$2-${NOW}.csv
 
 #echo "url,type,username,password,hostname,extra,name,folder" > ${CSVFILE}
-echo > ${CSVFILE} 
+#Clear the CSV file
+: > ${CSVFILE} 
 echo "Dirs: ${DIRS[@]}"
 for DIR in "${DIRS[@]}"
 do
@@ -52,7 +53,7 @@ do
 		then
 			echo "ERROR: Failed changing database password"
 		fi
-		echo "$2,:8083,$USER,$PASS,$DOMAIN,,,Vesta & FTP" >> ${CSVFILE}
+		echo "$2:8083,,$USER,$PASS,$DOMAIN,,,Vesta & FTP" >> ${CSVFILE}
 		echo "$2:3306,,${USER}_db,$DB_PASS,$DOMAIN,,,Database" >> ${CSVFILE}		
 	else
 		echo "$DIR contains no WordPress installation"
