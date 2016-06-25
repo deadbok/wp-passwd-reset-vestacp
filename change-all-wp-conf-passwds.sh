@@ -40,6 +40,9 @@ LOGFILE=log-$2-${NOW}.log
 WP_ADMIN_USER=admin
 WP_ADMIN_EMAIL=some@email.com
 
+#Set to true, to reset all WordPress user passwords
+WP_USER_PASS_RESET=false
+
 source config.sh
 
 function print_user_info()
@@ -171,18 +174,41 @@ do
 		#Export WordPress admin user
 		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE}
 		
-		USER_EMAIL=$(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER})
-		echo "Mailing: ${USER_EMAIL}"
-		cat user_reset_mail.txt | mutt -s "Password nulstilling for $2" -- ${USER_EMAIL} 
-		 
+		USER_EMAIL_TMPL=$(cat user_reset_mail.txt)
+		
+		USER_EMAILS=$(echo "SELECT user_email FROM cg_users" | mysql -u root karlkl10_db | cut -d ' ' -f2- )
+		WP_USERS=$(echo "SELECT user_login FROM cg_users" | mysql -u root karlkl10_db | cut -d ' ' -f2- )
+		N_USERS=${#USER_EMAILS[@]}
+
+		if $WP_USER_PASS_RESET;
+		then		
+			for (( i=0; i<${N_USERS}; i++ ));
+			do
+				WP_USER=${WP_USERS[$i])}
+				WP_PASS=($(openssl rand -base64 12))
+				USER_EMAIL=${USER_EMAILS[$i]}
+				echo "WordPress user: ${WP_USER}"
+				echo "WordPress user password: ${WP_PASS}"
+				echo "Mailing: ${USER_EMAIL}"
+				echo '$(eval $USER_EMAIL_TMPL)' | mutt -s "Password nulstilling for ${DOMAIN}" -- ${EMAIL}
+				#Export WordPress user
+				echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,$DOMAIN WordPress user,WordPress users" >> ${CSVFILE}
+				#
+				#DO NOT uncomment the next line unless your want to send the WordPress credentials to the email adress of the user.
+				#
+				# echo '$(eval $USER_EMAIL_TMPL)' | mutt -s "Password nulstilling for ${DOMAIN}" -- ${USER_EMAIL} < $(eval ${USER_EMAIL_TMPL})
+			done				
+		fi		 
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
 	echo
 done
 
+EMAIL_TMPL=$(cat reset_mail.txt)
+
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} < $(eval(cat reset_mail.txt)) 
+	echo '$(eval $EMAIL_TMPL)' | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done
