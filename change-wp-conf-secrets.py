@@ -1,6 +1,8 @@
 """
 Update the secrets in a Wordpress configuration file.
 """
+from __future__ import print_function
+
 import glob
 import argparse
 import os.path
@@ -24,9 +26,9 @@ def change_value(value, config, start):
 		line = line.replace('\t', '');
 		if line.startswith(start):
 			config[i] = line[:len(start) - 1] + " '" + value + "');\n"
-			print '.',
+			print('.', end='')
 			return
-	print 'e',
+	print('e', end='')
 	exit('Error changing value for: ' + start)
 	
 
@@ -87,6 +89,8 @@ def main():
 		change_value(generate_salt(), config, "define('SECURE_AUTH_SALT','")
 		change_value(generate_salt(), config, "define('LOGGED_IN_SALT','")
 		change_value(generate_salt(), config, "define('NONCE_SALT','")
+
+	print('done')
 	
 	args.config_file.seek(0)	
 	args.config_file.write(''.join(config))
