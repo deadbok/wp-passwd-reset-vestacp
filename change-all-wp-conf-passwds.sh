@@ -187,17 +187,15 @@ do
 		#Export WordPress admin user
 		echo "${WP_ADMIN_URL},,${WP_ADMIN_USER},$WP_ADMIN_PASS,$DOMAIN,,$DOMAIN WordPress administrator,WordPress administrator users" >> ${CSVFILE}
 		
-		USER_EMAIL_TMPL=$(cat user_reset_mail.txt)
-		
-		USER_EMAILS=$(echo "SELECT user_email FROM cg_users" | mysql -u root karlkl10_db | cut -d ' ' -f2- )
-		WP_USERS=$(echo "SELECT user_login FROM cg_users" | mysql -u root karlkl10_db | cut -d ' ' -f2- )
+		USER_EMAILS=$(echo $(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
+		WP_USERS=$(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- )
 		N_USERS=${#USER_EMAILS[@]}
 
 		if $WP_USER_PASS_RESET;
 		then		
 			for (( i=0; i<${N_USERS}; i++ ));
 			do
-				WP_USER=${WP_USERS[$i])}
+				WP_USER=${WP_USERS[$i]}
 				WP_PASS=($(openssl rand -base64 12))
 				USER_EMAIL=${USER_EMAILS[$i]}
 				echo "WordPress user: ${WP_USER}"
@@ -217,8 +215,6 @@ do
 	fi
 	echo
 done
-
-EMAIL_TMPL=$(cat reset_mail.txt)
 
 for EMAIL in "${EMAILS[@]}"
 do
