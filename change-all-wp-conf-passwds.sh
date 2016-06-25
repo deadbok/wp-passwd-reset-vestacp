@@ -54,7 +54,8 @@ do
 		then
 			echo "ERROR: Failed updating $FILE"
 		fi
-		echo "\nChanging user and database user using Vesta."
+		echo
+		echo "Changing user and database user using Vesta."
 		${VESTA_PATH}v-change-user-password $USER $PASS
 		if [ $? -ne 0 ]
 		then
