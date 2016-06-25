@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Update the secrets in a Wordpress configuration file.
 

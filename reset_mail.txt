@@ -1,6 +1,6 @@
 Hello!
 
 This is a password reset notification.
-Attached is a CSV file suitable for importing into Lastpass, and log of the process. 
+Attached is a CSV file suitable for Lastpass, and log of the process. 
 
 "Keep it secret, keep it safe."
