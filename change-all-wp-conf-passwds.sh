@@ -189,7 +189,7 @@ do
 			for (( i=0; i<${N_USERS}; i++ ));
 			do
 				WP_USER=${WP_USERS[$i]}
-				if [ $WP_USER != '' ];
+				if [ "$WP_USER" != "" ];
 				then
 					WP_PASS=($(openssl rand -base64 12))
 					USER_EMAIL=${USER_EMAILS[$i]}
