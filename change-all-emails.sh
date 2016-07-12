@@ -82,7 +82,7 @@ do
 	#Split the path by '/' to isolate user and domain
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
-	USER=${DIR_PARTS[0]}
+	USER=${DIR_PARTS[1]}
 	DOMAIN=${DIR_PARTS[2]}
 	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 
@@ -111,7 +111,7 @@ do
 		echo "WordPress users: "
 		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
 		
-		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- ))
+		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p ${WP_DB_PASSWD} ${WP_DB_NAME}) | cut -d ' ' -f3- ))
 
 		N_USERS=${#WP_USERS[@]}
 
@@ -123,7 +123,7 @@ do
 				echo
 				echo "WordPress user: ${WP_USER}"
 				echo "Setting email to: ${EMAIL}"
-				echo "UPDATE ${TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u root ${DB_USER}
+				echo "UPDATE ${TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} -p ${WP_DB_PASSWD} ${WP_DB_NAME}
 			fi
 		done				
 		
