@@ -83,19 +83,11 @@ do
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
 	USER=${DIR_PARTS[0]}
-	WP_DB_NAME=`cat $WP_CONF_FILE | grep DB_NAME | cut -d \' -f 4`
-	WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
-	WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
 	DOMAIN=${DIR_PARTS[2]}
 	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 
 	echo "Domain: $DOMAIN"
 	print_user_info
-	print_db_info
-	if [ -f $WP_CONF_FILE ];
-	then
-		print_wp_info
-	fi
 	echo ------------------------------------------------------------------------------------------------------------------
 
 	if [ -f $WP_CONF_FILE ];
@@ -107,7 +99,14 @@ do
 		rm wp-config.php.tmp
 		echo
 		echo "WordPress database table prefix: ${TABLE_PREFIX}"	
+
+		WP_DB_NAME=`cat $WP_CONF_FILE | grep DB_NAME | cut -d \' -f 4`
+		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
+		WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
 		
+		print_db_info
+		print_wp_info
+						
 		echo
 		echo "WordPress users: "
 		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
