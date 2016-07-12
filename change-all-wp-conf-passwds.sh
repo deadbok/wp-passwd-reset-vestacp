@@ -67,7 +67,7 @@ function print_wp_info()
 {
 	echo "Admin URL: $WP_ADMIN_URL"
 	echo "WordPress admin user: $WP_ADMIN_USER"
-	echo "WordPress admin email: $WP_ADMIN_PASS"
+	echo "WordPress admin email: $WP_ADMIN_EMAIL"
 	echo
 }
 
