@@ -109,9 +109,9 @@ do
 						
 		echo
 		echo "WordPress users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p ${WP_DB_PASS} ${WP_DB_NAME}
+		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}
 		
-		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p ${WP_DB_PASS} ${WP_DB_NAME}) | cut -d ' ' -f3- ))
+		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}) | cut -d ' ' -f3- ))
 
 		N_USERS=${#WP_USERS[@]}
 
@@ -123,13 +123,13 @@ do
 				echo
 				echo "WordPress user: ${WP_USER}"
 				echo "Setting email to: ${EMAIL}"
-				echo "UPDATE ${TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} -p ${WP_DB_PASS} ${WP_DB_NAME}
+				echo "UPDATE ${TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}
 			fi
 		done				
 		
 		echo					
 		echo "WordPress updated users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p ${WP_DB_PASS} ${WP_DB_NAME}
+		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
