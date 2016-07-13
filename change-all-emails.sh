@@ -46,7 +46,7 @@ function print_db_info()
 {
 	echo "Database name: ${WP_DB_NAME}"
 	echo "Database user: ${WP_DB_USER}"
-	echo
+	echo "Database table prefix: ${WP_TABLE_PREFIX}"
 }
 
 function print_wp_info()
@@ -83,7 +83,7 @@ do
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
 	USER=${DIR_PARTS[1]}
-	DOMAIN=${DIR_PARTS[3]}
+	DOMAIN=${DIR_PARTS[2]}
 	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 
 	echo "Domain: $DOMAIN"
@@ -97,22 +97,24 @@ do
 		echo "echo \$table_prefix; ?>" >> wp-config.php.tmp
 		TABLE_PREFIX=$(php wp-config.php.tmp)
 		rm wp-config.php.tmp
-		echo
-		echo "WordPress database table prefix: ${TABLE_PREFIX}"	
+	
 
 		WP_DB_NAME=`cat $WP_CONF_FILE | grep DB_NAME | cut -d \' -f 4`
 		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
 		WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
+		WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
 		
 		print_db_info
 		print_wp_info
 						
-		echo
-		echo "WordPress users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}
+		#echo
+		#echo "WordPress users: "
+		#echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 		
-		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}) | cut -d ' ' -f3- ))
+		WP_USERS="$(echo $(echo "SELECT user_login FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) |  cut -d ' ' -f2-)"
+		WP_USERS=($WP_USERS) 
 
+		echo "WordPress users: " ${WP_USERS}
 		N_USERS=${#WP_USERS[@]}
 
 		for (( i=0; i<${N_USERS}; i++ ));
@@ -123,13 +125,13 @@ do
 				echo
 				echo "WordPress user: ${WP_USER}"
 				echo "Setting email to: ${EMAIL}"
-				echo "UPDATE ${TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}
+				echo "UPDATE ${WP_TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 			fi
 		done				
 		
 		echo					
 		echo "WordPress updated users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} -p "${WP_DB_PASS}" ${WP_DB_NAME}
+		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
