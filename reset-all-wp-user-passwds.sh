@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # -*- coding: utf-8 -*-
 
-# Change all email addresses of all WordPress users on a VestaCP installation to the same new email address. 
+# Reset the password of a specific WordPress user on all WordPress installations on a VestaCP setup.
 
 #MIT License
 #
@@ -25,36 +25,36 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE
 
-#Set all WordPress email to this one.
-EMAIL=(some@email.com)
+#An list of addresses to send the info.
+EMAILS=(some@email.com)
 
-#Path to the VestaCP command line tools.
-VESTA_PATH=/usr/local/vesta/bin/
 #Wildcard pattern for entering all sites.
 DIRS=($1/*/web/*/public_html)
 #The time is now.
 NOW=$(date +"%m_%d_%Y_%H_%M")
-#Logfile
-LOGFILE=email-change-log-$2-${NOW}.log
+LOGFILE=wp-${WP_USER}-log-$2-${NOW}.log
 
+#WordPress user
+WP_USER=admin
+
+source config.sh
 
 function print_user_info()
 {
 	echo "User: $USER"
-	echo
 }
 			
 function print_db_info()
 {
 	echo "Database name: ${WP_DB_NAME}"
 	echo "Database user: ${WP_DB_USER}"
-	echo "Database table prefix: ${WP_TABLE_PREFIX}"
 }
 
 function print_wp_info()
 {
-	echo "Admin URL: $WP_ADMIN_URL"
-	echo
+	echo "Wordpress backend URL: $WP_ADMIN_URL"
+	echo "WordPress user: $WP_USER"
+	echo "WordPress database table prefix: ${WP_TABLE_PREFIX}"	
 }
 
 #http://stackoverflow.com/a/7633579
@@ -74,6 +74,10 @@ function template()
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
 exec > >(tee -i ${LOGFILE})		
 
+#Clear the CSV file
+#Add the header
+echo "url,type,username,password,hostname,extra,name,folder" > ${CSVFILE}
+
 echo Dirs: ${DIRS[@]}
 echo
 for DIR in "${DIRS[@]}"
@@ -84,45 +88,63 @@ do
 	#Split the path by '/' to isolate user and domain
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
-	USER=${DIR_PARTS[1]}
+	USER=${DIR_PARTS[0]}
+	if [ $? -ne 0 ]
+	then
+		echo "ERROR: Getting database user"
+	fi
 	DOMAIN=${DIR_PARTS[2]}
-	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 
+	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
+	WP_PASS=($(openssl rand -base64 12))
+		if [ $? -ne 0 ]
+	then
+		echo "ERROR: Failed when creating WordPress user password"
+	fi
+	WP_DB_NAME=`cat $WP_CONF_FILE | grep DB_NAME | cut -d \' -f 4`
+	WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
+	WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
+	WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f
+	
 	echo "Domain: $DOMAIN"
 	print_user_info
-
+	print_db_info
 	if [ -f $WP_CONF_FILE ];
 	then
-		#Get the table prefix.
-		WP_DB_NAME=`cat $WP_CONF_FILE | grep DB_NAME | cut -d \' -f 4`
-		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
-		WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
-		WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
+		print_wp_info	
 		
-		print_db_info
-		print_wp_info
-						
-		WP_USERS=($(echo $(echo "SELECT user_login FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) |  cut -d ' ' -f2-))
-		 
-		echo "Processing WordPress users: " ${WP_USERS}
-		N_USERS=${#WP_USERS[@]}
-
-		for (( i=0; i<${N_USERS}; i++ ));
-		do
-			WP_USER=${WP_USERS[$i]}
-			if [ "$WP_USER" != "" ];
-			then
-				echo "WordPress user: ${WP_USER}"
-				echo "Setting email to: ${EMAIL}"
-				echo "UPDATE ${WP_TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-			fi
-		done				
+		echo
+		echo "Changing WordPress secrets"
+		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -s -b
+		if [ $? -ne 0 ]
+		then
+			echo "ERROR: Failed updating $WP_CONF_FILE"
+		fi
 		
+		echo "WordPress users: "
+		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
+		
+		echo "Setting ${WP_USER} password to: ${WP_PASS}"
+		echo "UPDATE ${WP_TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
+			
 		echo					
 		echo "WordPress updated users: "
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
+		
+		#Export WordPress user
+		#Name of the CSV file for lastpass
+		CSVFILE=wp-${WP_USER}-users-$2-${NOW}.csv
+		echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users" >> ${CSVFILE}
+						 
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
 	echo
+done
+
+echo "Mailing CSV and log"
+for EMAIL in "${EMAILS[@]}"
+do
+	echo "Mailing: ${EMAIL}"
+	template reset_mail.txt | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done

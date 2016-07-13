@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # -*- coding: utf-8 -*-
 
-# Change all email addresses of all WordPress users on a VestaCP installation to the same new email address. 
+# Reset all VestaCP users passwords.
 
 #MIT License
 #
@@ -25,8 +25,8 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE
 
-#Set all WordPress email to this one.
-EMAIL=(some@email.com)
+#An list of addresses to send the info.
+EMAILS=(some@email.com)
 
 #Path to the VestaCP command line tools.
 VESTA_PATH=/usr/local/vesta/bin/
@@ -34,29 +34,20 @@ VESTA_PATH=/usr/local/vesta/bin/
 DIRS=($1/*/web/*/public_html)
 #The time is now.
 NOW=$(date +"%m_%d_%Y_%H_%M")
-#Logfile
-LOGFILE=email-change-log-$2-${NOW}.log
+#Name of the CSV file for lastpass
+CSVFILE=vesta-users-$2-${NOW}.csv
+LOGFILE=vesta-log-$2-${NOW}.log
 
+source config.sh
 
 function print_user_info()
 {
+echo "VestaCP URL: ${VESTA_URL}"
 	echo "User: $USER"
+	echo "New user password: $PASS"
 	echo
 }
 			
-function print_db_info()
-{
-	echo "Database name: ${WP_DB_NAME}"
-	echo "Database user: ${WP_DB_USER}"
-	echo "Database table prefix: ${WP_TABLE_PREFIX}"
-}
-
-function print_wp_info()
-{
-	echo "Admin URL: $WP_ADMIN_URL"
-	echo
-}
-
 #http://stackoverflow.com/a/7633579
 function template()
 {
@@ -74,55 +65,43 @@ function template()
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
 exec > >(tee -i ${LOGFILE})		
 
+#Clear the CSV file
+#Add the header
+echo "url,type,username,password,hostname,extra,name,folder" > ${CSVFILE}
+
 echo Dirs: ${DIRS[@]}
 echo
 for DIR in "${DIRS[@]}"
 do
-	WP_CONF_FILE=$DIR/wp-config.php
 	echo Working directory: $DIR
 	echo ------------------------------------------------------------------------------------------------------------------
 	#Split the path by '/' to isolate user and domain
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
-	USER=${DIR_PARTS[1]}
-	DOMAIN=${DIR_PARTS[2]}
-	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
+	USER=${DIR_PARTS[0]}
 
-	echo "Domain: $DOMAIN"
+	PASS=($(openssl rand -base64 12))
+	if [ $? -ne 0 ]
+	then
+		echo "ERROR: Failed when creating user password"
+	fi
+
+		echo "Domain: $DOMAIN"
 	print_user_info
 
-	if [ -f $WP_CONF_FILE ];
+	echo "Changing user password using Vesta."
+	${VESTA_PATH}v-change-user-password $USER $PASS
+	if [ $? -ne 0 ]
 	then
-		#Get the table prefix.
-		WP_DB_NAME=`cat $WP_CONF_FILE | grep DB_NAME | cut -d \' -f 4`
-		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
-		WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
-		WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
-		
-		print_db_info
-		print_wp_info
-						
-		WP_USERS=($(echo $(echo "SELECT user_login FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) |  cut -d ' ' -f2-))
-		 
-		echo "Processing WordPress users: " ${WP_USERS}
-		N_USERS=${#WP_USERS[@]}
-
-		for (( i=0; i<${N_USERS}; i++ ));
-		do
-			WP_USER=${WP_USERS[$i]}
-			if [ "$WP_USER" != "" ];
-			then
-				echo "WordPress user: ${WP_USER}"
-				echo "Setting email to: ${EMAIL}"
-				echo "UPDATE ${WP_TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-			fi
-		done				
-		
-		echo					
-		echo "WordPress updated users: "
-		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-	else
-		echo "$DIR contains no WordPress installation"
+		echo "ERROR: Failed changing user password"
 	fi
-	echo
+	#Export CSV data for user
+	echo "$2:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,Vesta & FTP users" >> ${CSVFILE}
+done
+
+echo "Mailing CSV and log"
+for EMAIL in "${EMAILS[@]}"
+do
+	echo "Mailing: ${EMAIL}"
+	template reset_mail.txt | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done

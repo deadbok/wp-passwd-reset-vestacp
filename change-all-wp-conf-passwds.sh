@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # -*- coding: utf-8 -*-
 
+# Do a rather violent reset of most of all WordPress, and VestaCP users.
+
 #MIT License
 #
 #Copyright (c) 2016 Martin Bo Kristensen Grønholdt 
@@ -31,7 +33,7 @@ VESTA_PATH=/usr/local/vesta/bin/
 #Wildcard pattern for entering all sites.
 DIRS=($1/*/web/*/public_html)
 #The time is now.
-NOW=$(date +"%m_%d_%Y")
+NOW=$(date +"%m_%d_%Y_%H_%M")
 #Name of the CSV file for lastpass
 CSVFILE=users-$2-${NOW}.csv
 LOGFILE=log-$2-${NOW}.log
@@ -156,7 +158,7 @@ do
 		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -u ${DB_USER} -n ${DB_USER} -p ${DB_PASS} -s -b
 		if [ $? -ne 0 ]
 		then
-			echo "ERROR: Failed updating $FILE"
+			echo "ERROR: Failed updating $WP_CONF_FILE"
 		fi
 		
 		#Get the table prefix.
@@ -169,18 +171,18 @@ do
 		
 		echo
 		echo "WordPress users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
+		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 		
 		echo
 		echo "Setting ${WP_ADMIN_USER} email to: ${WP_ADMIN_EMAIL}"
-		echo "UPDATE ${TABLE_PREFIX}users SET user_email='${WP_ADMIN_EMAIL}' WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${DB_USER}
+		echo "UPDATE ${TABLE_PREFIX}users SET user_email='${WP_ADMIN_EMAIL}' WHERE user_login='${WP_ADMIN_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 
 		echo "Setting ${WP_ADMIN_USER} password to: ${WP_ADMIN_PASS}"
-		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u root ${DB_USER}
+		echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_ADMIN_PASS}') WHERE user_login='${WP_ADMIN_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 			
 		#Skip admin		
-		USER_EMAILS=($(echo $(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- ))
-		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}) | cut -d ' ' -f3- ))
+		USER_EMAILS=($(echo $(echo "SELECT user_email FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) | cut -d ' ' -f3- ))
+		WP_USERS=($(echo $(echo "SELECT user_login FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) | cut -d ' ' -f3- ))
 
 		N_USERS=${#USER_EMAILS[@]}
 
@@ -196,7 +198,7 @@ do
 					echo
 					echo "WordPress user: ${WP_USER}"
 					echo "Setting password to: ${WP_PASS}"
-					echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u root ${DB_USER}
+					echo "UPDATE ${TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 	
 					echo "Mailing credentials..."
 					for EMAIL in "${EMAILS[@]}"
@@ -217,7 +219,7 @@ do
 		
 		echo					
 		echo "WordPress updated users: "
-		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u root ${DB_USER}
+		echo "SELECT * FROM ${TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 		
 		#Set user of wp-config.php
 		chown ${USER}:${USER} ${WP_CONF_FILE}
