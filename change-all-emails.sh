@@ -88,7 +88,6 @@ do
 
 	echo "Domain: $DOMAIN"
 	print_user_info
-	echo ------------------------------------------------------------------------------------------------------------------
 
 	if [ -f $WP_CONF_FILE ];
 	then
@@ -107,14 +106,9 @@ do
 		print_db_info
 		print_wp_info
 						
-		#echo
-		#echo "WordPress users: "
-		#echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-		
-		WP_USERS="$(echo $(echo "SELECT user_login FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) |  cut -d ' ' -f2-)"
-		WP_USERS=($WP_USERS) 
-
-		echo "WordPress users: " ${WP_USERS}
+		WP_USERS=($(echo $(echo "SELECT user_login FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) |  cut -d ' ' -f2-))
+		 
+		echo "Processing WordPress users: " ${WP_USERS}
 		N_USERS=${#WP_USERS[@]}
 
 		for (( i=0; i<${N_USERS}; i++ ));
@@ -122,7 +116,6 @@ do
 			WP_USER=${WP_USERS[$i]}
 			if [ "$WP_USER" != "" ];
 			then
-				echo
 				echo "WordPress user: ${WP_USER}"
 				echo "Setting email to: ${EMAIL}"
 				echo "UPDATE ${WP_TABLE_PREFIX}users SET user_email='${EMAIL}' WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
