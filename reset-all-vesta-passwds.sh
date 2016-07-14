@@ -35,8 +35,8 @@ DIRS=($1/*/web/*/public_html)
 #The time is now.
 NOW=$(date +"%m_%d_%Y_%H_%M")
 #Name of the CSV file for lastpass
-CSVFILE=vesta-users-$2-${NOW}.csv
-LOGFILE=vesta-log-$2-${NOW}.log
+CSVFILE=vesta-user-reset-$2-${NOW}.csv
+LOGFILE=vesta-user-reset-log-$2-${NOW}.log
 
 VESTA_URL=$2:8083
 
@@ -44,7 +44,7 @@ source config.sh
 
 function print_user_info()
 {
-echo "VestaCP URL: ${VESTA_URL}"
+	echo "VestaCP URL: ${VESTA_URL}"
 	echo "User: $USER"
 	echo "New user password: $PASS"
 	echo
@@ -89,7 +89,7 @@ do
 		echo "ERROR: Failed when creating user password"
 	fi
 
-		echo "Domain: $DOMAIN"
+	echo "Domain: $DOMAIN"
 	print_user_info
 
 	echo "Changing user password using Vesta."
@@ -106,5 +106,5 @@ echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	template reset_mail.txt | mutt -s "Vesta user password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done
