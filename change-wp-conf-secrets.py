@@ -96,23 +96,35 @@ def main():
 		exit('Error creating backup: ' + str(ex))
 		
 	
-	if (args.user != ''):
-		change_value(args.user, config, "define('DB_USER','")
-	if (args.passwd != ''):
-		change_value(args.passwd, config, "define('DB_PASSWORD','")
-	if (args.name != ''):
-		change_value(args.name, config, "define('DB_NAME','")
+	if args.user is not None:
+		if args.user != '':
+			print('Changing user: "' + args.user + '"', end='')
+			change_value(args.user, config, "define('DB_USER','")
+			print
+	if args.passwd is not None:
+		if (args.passwd != ''):
+			print('Changing password: "' + args.passwd + '"', end='')
+			change_value(args.passwd, config, "define('DB_PASSWORD','")
+			print('')
+	if args.name is not None:
+		if (args.name != ''):
+			print('Database name: "' + args.name + '"', end='')
+			change_value(args.name, config, "define('DB_NAME','")
+			print
 
-	if (args.salts):
-		change_value(generate_salt(), config, "define('AUTH_KEY','")
-		change_value(generate_salt(), config, "define('SECURE_AUTH_KEY','")
-		change_value(generate_salt(), config, "define('LOGGED_IN_KEY','")
-		change_value(generate_salt(), config, "define('NONCE_KEY','")
-		change_value(generate_salt(), config, "define('AUTH_SALT','")
-		change_value(generate_salt(), config, "define('SECURE_AUTH_SALT','")
-		change_value(generate_salt(), config, "define('LOGGED_IN_SALT','")
-		change_value(generate_salt(), config, "define('NONCE_SALT','")
+	if args.salts is not None:
+		if (args.salts):
+			print('Changing salts.', end='')
+			change_value(generate_salt(), config, "define('AUTH_KEY','")
+			change_value(generate_salt(), config, "define('SECURE_AUTH_KEY','")
+			change_value(generate_salt(), config, "define('LOGGED_IN_KEY','")
+			change_value(generate_salt(), config, "define('NONCE_KEY','")
+			change_value(generate_salt(), config, "define('AUTH_SALT','")
+			change_value(generate_salt(), config, "define('SECURE_AUTH_SALT','")
+			change_value(generate_salt(), config, "define('LOGGED_IN_SALT','")
+			change_value(generate_salt(), config, "define('NONCE_SALT','")
 
+	print
 	print('done')
 	
 	args.config_file.seek(0)	
