@@ -37,6 +37,7 @@ NOW=$(date +"%m_%d_%Y_%H_%M")
 #Logfile
 LOGFILE=email-change-log-$2-${NOW}.log
 
+source config.sh
 
 function print_user_info()
 {
