@@ -35,13 +35,16 @@ DIRS=($1/*/web/*/public_html)
 #The time is now.
 NOW=$(date +"%m_%d_%Y_%H_%M")
 #Name of the CSV file for lastpass
-CSVFILE=db-users-$2-${NOW}.csv
-LOGFILE=db-log-$2-${NOW}.log
+CSVFILE=db-user-reset-$2-${NOW}.csv
+LOGFILE=db-user-reset-log-$2-${NOW}.log
+
+VESTA_URL=$2:8083
 
 source config.sh
 
 function print_user_info()
 {
+	echo "VestaCP URL: ${VESTA_URL}"
 	echo "User: $USER"
 }
 			
@@ -89,46 +92,53 @@ do
 	#Split the path by '/' to isolate user and domain
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
-	USER=${DIR_PARTS[0]}
-	DB_USER=$(${VESTA_PATH}/v-list-databases ${USER} plain | cut -d" " -f1)
+	USER=${DIR_PARTS[1]}
+	DOMAIN=${DIR_PARTS[3]}
+	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
+	
+	DB_USER=$(${VESTA_PATH}/v-list-databases ${USER} plain | cut -d"	" -f1)
 	if [ $? -ne 0 ]
 	then
 		echo "ERROR: Getting database user"
 	fi
-	DOMAIN=${DIR_PARTS[2]}
-	PHPMYADMIN_URL="http://$2/phpmyadmin"
-
-	DB_PASS=($(openssl rand -base64 12))
-	if [ $? -ne 0 ]
-	then
-		echo "ERROR: Failed when creating database user password"
-	fi`
-	WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f
-
-	echo "Domain: $DOMAIN"
-	print_user_info
-	print_db_info
-
-	echo "Changing database password using Vesta."
-	${VESTA_PATH}v-change-database-password ${USER} ${DB_USER} ${DB_PASS}
-	if [ $? -ne 0 ]
-	then
-		echo "ERROR: Failed changing database password"
-	fi
 	
-	if [ -f $WP_CONF_FILE ];
+	if [ -n "${DB_USER}" ]
 	then
-		print_wp_info
-		
-		echo
-		echo "Changing WordPress database passwords, and secrets"
-		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -p ${DB_PASS} -s -b
+		PHPMYADMIN_URL="http://$2/phpmyadmin"
+	
+		DB_PASS=($(openssl rand -base64 12))
 		if [ $? -ne 0 ]
 		then
-			echo "ERROR: Failed updating $WP_CONF_FILE"
-		fi	
+			echo "ERROR: Failed when creating database user password"
+		fi
+	
+		echo "Domain: $DOMAIN"
+		print_user_info
+		print_db_info
+	
+		echo "Changing database password using Vesta."
+		${VESTA_PATH}v-change-database-password ${USER} ${DB_USER} ${DB_PASS}
+		if [ $? -ne 0 ]
+		then
+			echo "ERROR: Failed changing database password"
+		fi
+		
+		if [ -f $WP_CONF_FILE ];
+		then
+			WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
+			print_wp_info
+	
+			echo "Changing WordPress database passwords, and secrets"
+			python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -p ${DB_PASS} -s -b
+			if [ $? -ne 0 ]
+			then
+				echo "ERROR: Failed updating $WP_CONF_FILE"
+			fi	
+		else
+			echo "$DIR contains no WordPress installation"
+		fi
 	else
-		echo "$DIR contains no WordPress installation"
+		echo "No database."
 	fi
 	echo
 	#Export CSV data for user and database
@@ -139,5 +149,5 @@ echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	template reset_mail.txt | mutt -s "Database password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done
