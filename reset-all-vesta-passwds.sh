@@ -38,6 +38,8 @@ NOW=$(date +"%m_%d_%Y_%H_%M")
 CSVFILE=vesta-users-$2-${NOW}.csv
 LOGFILE=vesta-log-$2-${NOW}.log
 
+VESTA_URL=$2:8083
+
 source config.sh
 
 function print_user_info()
@@ -78,7 +80,8 @@ do
 	#Split the path by '/' to isolate user and domain
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
-	USER=${DIR_PARTS[0]}
+	USER=${DIR_PARTS[1]}
+	DOMAIN=${DIR_PARTS[3]}
 
 	PASS=($(openssl rand -base64 12))
 	if [ $? -ne 0 ]
