@@ -36,10 +36,11 @@ VESTA_PATH=/usr/local/vesta/bin/
 DIRS=($1/*/web/*/public_html)
 #The time is now.
 NOW=$(date +"%m_%d_%Y_%H_%M")
-#Logfile
-LOGFILE=email-change-${EMAIL}-to-${NEW_EMAILS}-$2-${NOW}.log
 
 source config.sh
+
+#Logfile
+LOGFILE=email-change-${EMAIL}-to-${NEW_EMAILS}-$2-${NOW}.log
 
 function print_user_info()
 {
