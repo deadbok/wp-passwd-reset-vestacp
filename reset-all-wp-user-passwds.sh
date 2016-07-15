@@ -146,5 +146,5 @@ echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mutt -s "Password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	template reset_mail.txt | mutt -s "Password reset information for WordPress user ${WP_USER}" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
 done
