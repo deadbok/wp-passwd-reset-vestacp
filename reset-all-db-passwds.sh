@@ -25,7 +25,7 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE
 
-#An list of addresses to send the info.
+#A list of addresses to send the info.
 EMAILS=(some@email.com)
 
 #Path to the VestaCP command line tools.
@@ -51,7 +51,7 @@ function print_user_info()
 function print_db_info()
 {
 	echo "PHPMyAdmin URL: ${PHPMYADMIN_URL}"
-	echo "Database user: ${DB_USER}"
+	echo "Database user: ${WP_DB_USER}"
 	echo "New database password: $DB_PASS"
 }
 
@@ -96,14 +96,10 @@ do
 	DOMAIN=${DIR_PARTS[3]}
 	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 	
-	DB_USER=$(${VESTA_PATH}/v-list-databases ${USER} plain | cut -d"	" -f1)
-	if [ $? -ne 0 ]
+	if [ -f $WP_CONF_FILE ];
 	then
-		echo "ERROR: Getting database user"
-	fi
-	
-	if [ -n "${DB_USER}" ]
-	then
+		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
+		WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
 		PHPMYADMIN_URL="http://$2/phpmyadmin"
 	
 		DB_PASS=($(openssl rand -base64 12))
@@ -117,32 +113,26 @@ do
 		print_db_info
 	
 		echo "Changing database password using Vesta."
-		${VESTA_PATH}v-change-database-password ${USER} ${DB_USER} ${DB_PASS}
+		${VESTA_PATH}v-change-database-password ${USER} ${WP_DB_USER} ${DB_PASS}
 		if [ $? -ne 0 ]
 		then
 			echo "ERROR: Failed changing database password"
 		fi
 		
-		if [ -f $WP_CONF_FILE ];
+		print_wp_info
+
+		echo "Changing WordPress database passwords, and secrets"
+		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -p ${DB_PASS} -s -b
+		if [ $? -ne 0 ]
 		then
-			WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
-			print_wp_info
-	
-			echo "Changing WordPress database passwords, and secrets"
-			python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -p ${DB_PASS} -s -b
-			if [ $? -ne 0 ]
-			then
-				echo "ERROR: Failed updating $WP_CONF_FILE"
-			fi	
-		else
-			echo "$DIR contains no WordPress installation"
-		fi
+			echo "ERROR: Failed updating $WP_CONF_FILE"
+		fi	
 	else
-		echo "No database."
+		echo "$DIR contains no WordPress installation"
 	fi
 	echo
 	#Export CSV data for user and database
-	echo "$2/phpmyadmin,,${DB_USER},$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
+	echo "$2/phpmyadmin,,${WP_DB_USER},$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
 done
 
 echo "Mailing CSV and log"
