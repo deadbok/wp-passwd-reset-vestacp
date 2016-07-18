@@ -44,7 +44,7 @@ function print_user_info()
 {
 	echo "User: $USER"
 }
-			
+
 function print_db_info()
 {
 	echo "Database name: ${WP_DB_NAME}"
@@ -55,7 +55,7 @@ function print_wp_info()
 {
 	echo "Wordpress backend URL: $WP_ADMIN_URL"
 	echo "WordPress user: $WP_USER"
-	echo "WordPress database table prefix: ${WP_TABLE_PREFIX}"	
+	echo "WordPress database table prefix: ${WP_TABLE_PREFIX}"
 }
 
 #http://stackoverflow.com/a/7633579
@@ -67,13 +67,13 @@ function template()
             line=${line//\`/\\\`}
             line=${line//\$/\\\$}
             line=${line//\\\${/\${}
-            eval "echo \"$line\""; 
+            eval "echo \"$line\"";
     done < ${1}
 }
 
 #http://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself/3403786#3403786
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
-exec > >(tee -i ${LOGFILE})		
+exec > >(tee -i ${LOGFILE})
 
 #Clear the CSV file
 #Add the header
@@ -102,7 +102,7 @@ do
 	then
 		echo "ERROR: Failed when creating WordPress user password"
 	fi
-	
+
 	echo "Domain: $DOMAIN"
 	print_user_info
 	print_db_info
@@ -112,9 +112,9 @@ do
 		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
 		WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
 		WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
-	
-		print_wp_info	
-		
+
+		print_wp_info
+
 		echo
 		echo "Changing WordPress secrets"
 		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -s -b
@@ -122,10 +122,10 @@ do
 		then
 			echo "ERROR: Failed updating $WP_CONF_FILE"
 		fi
-		
+
 		echo "WordPress users: "
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-		
+
 		USER_EMAILS=($(echo $(echo "SELECT user_email FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) | cut -d ' ' -f2-))
 		WP_USERS=($(echo $(echo "SELECT user_login FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) |  cut -d ' ' -f2-))
 
@@ -137,6 +137,8 @@ do
 			WP_USER=${WP_USERS[$i]}
 			if [ "$WP_USER" != "" ];
 			then
+				# Check if this is an administrator user.
+				ADMIN=$( echo ${WP_USER} | grep ${ADMIN_PATTERN} )
 				WP_PASS=($(openssl rand -base64 12))
 				USER_EMAIL=${USER_EMAILS[$i]}
 				echo "WordPress user: ${WP_USER}"
@@ -149,19 +151,26 @@ do
 					echo "Mailing: ${EMAIL}"
 					template user_reset_mail.txt | mutt -s "Password nulstilling for ${WP_USER} på ${DOMAIN}" -- ${EMAIL}
 				done
-				#Export WordPress user
-				echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users" >> ${CSVFILE}
+				if [ "$ADMIN" != "" ];
+				then
+					echo "Admin user."
+					#Export admin WordPress user
+					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress admin users" >> ${CSVFILE}
+				else
+					#Export WordPress user
+					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users" >> ${CSVFILE}
+				fi
 				#
 				#DO NOT uncomment the next line unless your want to send the WordPress credentials to the email adress of the user.
 				#
 				echo "Mailing: ${USER_EMAIL}"
 				template user_reset_mail.txt | mutt -s "Password nulstilling for ${WP_USER} på ${DOMAIN}" -- ${USER_EMAIL}
 			fi
-		done				
-	
-		echo					
+		done
+
+		echo
 		echo "WordPress updated users: "
-		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}				 
+		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 	else
 		echo "$DIR contains no WordPress installation"
 	fi
@@ -172,5 +181,5 @@ echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mutt -s "WordPress user password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	template reset_mail.txt | mutt -s "WordPress user password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL}
 done
