@@ -140,7 +140,7 @@ do
 				# Check if this is an administrator user.
 				ADMIN=$( echo ${WP_USER} | grep ${ADMIN_PATTERN} )
 				WP_PASS=($(openssl rand -base64 12))
-				USER_EMAIL=${USER_EMAILS[$i]}
+				USER_EMAIL=($(echo $(echo "SELECT user_email FROM ${WP_TABLE_PREFIX}users WHERE user_login='${WP_USER}'" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}) |  cut -d ' ' -f2-))
 				echo "WordPress user: ${WP_USER}"
 				echo "Setting password to: ${WP_PASS}"
 				echo "UPDATE ${WP_TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
