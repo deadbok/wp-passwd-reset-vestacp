@@ -46,7 +46,7 @@ function print_user_info()
 {
 	echo "User: $USER"
 }
-			
+
 function print_db_info()
 {
 	echo "Database name: ${WP_DB_NAME}"
@@ -68,13 +68,13 @@ function template()
             line=${line//\`/\\\`}
             line=${line//\$/\\\$}
             line=${line//\\\${/\${}
-            eval "echo \"$line\""; 
+            eval "echo \"$line\"";
     done < ${1}
 }
 
 #http://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself/3403786#3403786
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
-exec > >(tee -i ${LOGFILE})		
+exec > >(tee -i ${LOGFILE})
 
 echo Dirs: ${DIRS[@]}
 echo
@@ -100,18 +100,21 @@ do
 		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
 		WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
 		WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
-		
+
 		print_db_info
 		print_wp_info
-		
+
 		echo "WordPress users: "
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-					
-		echo					
-		echo 'Changing email from "'${EMAIL}'" to "'${NEW_EMAIL}'"'
-		echo "UPDATE ${WP_TABLE_PREFIX}users SET user_email='${NEW_EMAIL}' WHERE user_email='${EMAIL}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 
-		echo					
+		echo
+		for OLD_EMAIL in "${CHANGE_EMAILS[@]}"
+		do
+			echo 'Changing email from "'${OLD_EMAIL}'" to "'${NEW_EMAIL}'"'
+			echo "UPDATE ${WP_TABLE_PREFIX}users SET user_email='${NEW_EMAIL}' WHERE user_email='${OLD_EMAIL}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
+		done
+
+		echo
 		echo "WordPress updated users: "
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 	else
