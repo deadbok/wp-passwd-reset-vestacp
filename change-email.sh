@@ -87,7 +87,7 @@ do
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
 	USER=${DIR_PARTS[1]}
-	DOMAIN=${DIR_PARTS[2]}
+	DOMAIN=${DIR_PARTS[3]}
 	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 
 	echo "Domain: $DOMAIN"
