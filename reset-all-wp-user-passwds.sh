@@ -43,7 +43,7 @@ function print_user_info()
 {
 	echo "User: $USER"
 }
-			
+
 function print_db_info()
 {
 	echo "Database name: ${WP_DB_NAME}"
@@ -54,7 +54,7 @@ function print_wp_info()
 {
 	echo "Wordpress backend URL: $WP_ADMIN_URL"
 	echo "WordPress user: $WP_USER"
-	echo "WordPress database table prefix: ${WP_TABLE_PREFIX}"	
+	echo "WordPress database table prefix: ${WP_TABLE_PREFIX}"
 }
 
 #http://stackoverflow.com/a/7633579
@@ -72,8 +72,10 @@ function template()
 
 #http://stackoverflow.com/questions/3173131/redirect-copy-of-stdout-to-log-file-from-within-bash-script-itself/3403786#3403786
 # Redirect stdout ( > ) into a named pipe ( >() ) running "tee"
-exec > >(tee -i ${LOGFILE})		
+exec > >(tee -i ${LOGFILE})	
 
+#Name of the CSV file for lastpass
+CSVFILE=wp-${WP_USER}-users-$2-${NOW}.csv
 #Clear the CSV file
 #Add the header
 echo "url,type,username,password,hostname,extra,name,folder" > ${CSVFILE}
@@ -88,12 +90,12 @@ do
 	#Split the path by '/' to isolate user and domain
 	REL_PATH=$(echo "$DIR" | rev | cut -d"/" -f1-5 | rev)
 	DIR_PARTS=(${REL_PATH//\// })
-	USER=${DIR_PARTS[0]}
+	USER=${DIR_PARTS[1]}
 	if [ $? -ne 0 ]
 	then
 		echo "ERROR: Getting database user"
 	fi
-	DOMAIN=${DIR_PARTS[2]}
+	DOMAIN=${DIR_PARTS[3]}
 
 	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
 	WP_PASS=($(openssl rand -base64 12))
@@ -104,15 +106,15 @@ do
 	WP_DB_NAME=`cat $WP_CONF_FILE | grep DB_NAME | cut -d \' -f 4`
 	WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
 	WP_DB_PASS=`cat $WP_CONF_FILE | grep DB_PASSWORD | cut -d \' -f 4`
-	WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f
-	
+	WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
+
 	echo "Domain: $DOMAIN"
 	print_user_info
 	print_db_info
 	if [ -f $WP_CONF_FILE ];
 	then
-		print_wp_info	
-		
+		print_wp_info
+
 		echo
 		echo "Changing WordPress secrets"
 		python2 change-wp-conf-secrets.py ${WP_CONF_FILE} -s -b
@@ -120,22 +122,20 @@ do
 		then
 			echo "ERROR: Failed updating $WP_CONF_FILE"
 		fi
-		
+
 		echo "WordPress users: "
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-		
+
 		echo "Setting ${WP_USER} password to: ${WP_PASS}"
 		echo "UPDATE ${WP_TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-			
-		echo					
+
+		echo
 		echo "WordPress updated users: "
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
-		
+
 		#Export WordPress user
-		#Name of the CSV file for lastpass
-		CSVFILE=wp-${WP_USER}-users-$2-${NOW}.csv
-		echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users" >> ${CSVFILE}
-						 
+		echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users\\${DOMAIN}" >> ${CSVFILE}
+
 	else
 		echo "$DIR contains no WordPress installation"
 	fi

@@ -155,10 +155,10 @@ do
 				then
 					echo "Admin user."
 					#Export admin WordPress user
-					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress admin users" >> ${CSVFILE}
+					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress admin users\\${DOMAIN}" >> ${CSVFILE}
 				else
 					#Export WordPress user
-					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users" >> ${CSVFILE}
+					echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users\\${DOMAIN}" >> ${CSVFILE}
 				fi
 				#
 				#DO NOT uncomment the next line unless your want to send the WordPress credentials to the email adress of the user.
