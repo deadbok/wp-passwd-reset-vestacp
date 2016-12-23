@@ -31,14 +31,14 @@ EMAILS=(some@email.com)
 #Path to the VestaCP command line tools.
 VESTA_PATH=/usr/local/vesta/bin/
 #Wildcard pattern for entering all sites.
-DIRS=($1/*/web/*/public_html)
+DIRS=(/home/*/web/*/public_html)
 #The time is now.
 NOW=$(date +"%m_%d_%Y_%H_%M")
 #Name of the CSV file for lastpass
-CSVFILE=vesta-user-reset-$2-${NOW}.csv
-LOGFILE=vesta-user-reset-log-$2-${NOW}.log
+CSVFILE=vesta-user-reset-$1-${NOW}.csv
+LOGFILE=vesta-user-reset-log-$1-${NOW}.log
 
-VESTA_URL=$2:8083
+VESTA_URL=$1:8083
 
 source config.sh
 
@@ -99,12 +99,12 @@ do
 		echo "ERROR: Failed changing user password"
 	fi
 	#Export CSV data for user
-	echo "$2:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,CG Admin\\Vesta & FTP users" >> ${CSVFILE}
+	echo "$1:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,CG Admin\\Vesta & FTP users" >> ${CSVFILE}
 done
 
 echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mailx -v -r ${SEND_NAME}  -s "Vesta user password reset information for $2"  -S smtp="${SEND_SMTP}" -S smtp_auth=lgin -S smtp-auth-user="${SEND_NAME}" -S smtp-auth-password="${SEND_PASSWD}" -S smtp-use-starttls -a ${CSVFILE} -a ${LOGFILE} ${EMAIL}
+	template reset_mail.txt | mailx -v -r ${SEND_NAME}  -s "Vesta user password reset information for $1"  -S smtp="${SEND_SMTP}" -S smtp_auth=lgin -S smtp-auth-user="${SEND_NAME}" -S smtp-auth-password="${SEND_PASSWD}" -S smtp-use-starttls -a ${CSVFILE} -a ${LOGFILE} ${EMAIL}
 done

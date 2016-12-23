@@ -31,14 +31,14 @@ EMAILS=(some@email.com)
 #Path to the VestaCP command line tools.
 VESTA_PATH=/usr/local/vesta/bin/
 #Wildcard pattern for entering all sites.
-DIRS=($1/*/web/*/public_html)
+DIRS=(/home/*/web/*/public_html)
 #The time is now.
 NOW=$(date +"%m_%d_%Y_%H_%M")
 #Name of the CSV file for lastpass
-CSVFILE=db-user-reset-$2-${NOW}.csv
-LOGFILE=db-user-reset-log-$2-${NOW}.log
+CSVFILE=db-user-reset-$1-${NOW}.csv
+LOGFILE=db-user-reset-log-$1-${NOW}.log
 
-VESTA_URL=$2:8083
+VESTA_URL=$1:8083
 
 source config.sh
 
@@ -100,9 +100,9 @@ do
 	then
 		WP_DB_USER=`cat $WP_CONF_FILE | grep DB_USER | cut -d \' -f 4`
 		WP_TABLE_PREFIX=`cat $WP_CONF_FILE | grep table_prefix | cut -d \' -f 2`
-		PHPMYADMIN_URL="http://$2/phpmyadmin"
+		PHPMYADMIN_URL="http://$1/phpmyadmin"
 	
-		DB_PASS=($(openssl rand -base64 12))
+		DB_PASS=($(openssl rand -base64 20))
 		if [ $? -ne 0 ]
 		then
 			echo "ERROR: Failed when creating database user password"
@@ -132,12 +132,12 @@ do
 	fi
 	echo
 	#Export CSV data for user and database
-	echo "$2/phpmyadmin,,${WP_DB_USER},$DB_PASS,$DOMAIN,,$DOMAIN database user,Database users" >> ${CSVFILE}
+	echo "$1/phpmyadmin,,${WP_DB_USER},$DB_PASS,$DOMAIN,,$DOMAIN database user,CG Admin\\Database users" >> ${CSVFILE}
 done
 
 echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mutt -s "Database password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	template reset_mail.txt | mailx -v -r ${SEND_NAME}  -s "Database password reset information for $1"  -S smtp="${SEND_SMTP}" -S smtp_auth=lgin -S smtp-auth-user="${SEND_NAME}" -S smtp-auth-password="${SEND_PASSWD}" -S smtp-use-starttls -a ${CSVFILE} -a ${LOGFILE} ${EMAIL}
 done
