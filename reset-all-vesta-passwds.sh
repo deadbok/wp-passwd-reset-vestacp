@@ -99,7 +99,7 @@ do
 		echo "ERROR: Failed changing user password"
 	fi
 	#Export CSV data for user
-	echo "$2:8083,,$USER,$PASS,$DOMAIN,,CG Admin\\$DOMAIN user,Vesta & FTP users" >> ${CSVFILE}
+	echo "$2:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,CG Admin\\Vesta & FTP users" >> ${CSVFILE}
 done
 
 echo "Mailing CSV and log"
