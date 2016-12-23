@@ -97,9 +97,9 @@ do
 	fi
 	DOMAIN=${DIR_PARTS[3]}
 
-	WP_ADMIN_URL="http://$DOMAIN/wp-admin"
-	WP_PASS=($(openssl rand -base64 12))
-		if [ $? -ne 0 ]
+	WP_ADMIN_URL="http://$DOMAIN/wp-login.php"
+	WP_PASS=($(openssl rand -base64 20))
+	if [ $? -ne 0 ]
 	then
 		echo "ERROR: Failed when creating WordPress user password"
 	fi
@@ -127,14 +127,16 @@ do
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 
 		echo "Setting ${WP_USER} password to: ${WP_PASS}"
+		echo "UPDATE ${WP_TABLE_PREFIX}users SET user_login='dev_adhus' WHERE user_nicename='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 		echo "UPDATE ${WP_TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_login='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
+#		echo "UPDATE ${WP_TABLE_PREFIX}users SET user_pass=md5('${WP_PASS}') WHERE user_nicename='${WP_USER}';" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 
 		echo
 		echo "WordPress updated users: "
 		echo "SELECT * FROM ${WP_TABLE_PREFIX}users" | mysql -u ${WP_DB_USER} --password=${WP_DB_PASS} ${WP_DB_NAME}
 
 		#Export WordPress user
-		echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,${WP_USER} on $DOMAIN,WordPress users\\${DOMAIN}" >> ${CSVFILE}
+		echo "${WP_ADMIN_URL},,${WP_USER},$WP_PASS,$DOMAIN,,$DOMAIN,CG Admin\\Morning Train\\Wordpress admin" >> ${CSVFILE}
 
 	else
 		echo "$DIR contains no WordPress installation"
@@ -146,5 +148,7 @@ echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mutt -s "Password reset information for WordPress user ${WP_USER}" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	#template reset_mail.txt | swaks --add-header "Subject: Password reset information for WordPress user ${WP_USER}"  --to ${EMAIL} --from ${SEND_EMAIL} --server ${SEND_SMTP} --auth LOGIN --auth-user ${SEND_NAME} --auth-password ${SEND_PASSWD} -tls --attach ${CSVFILE} --attach ${LOGFILE}
+	template reset_mail.txt | mailx -v -r ${SEND_NAME}  -s "Password reset information for WordPress user ${WP_USER}"  -S smtp="${SEND_SMTP}" -S smtp_auth=lgin -S smtp-auth-user="${SEND_NAME}" -S smtp-auth-password="${SEND_PASSWD}" -S smtp-use-starttls -a ${CSVFILE} -a ${LOGFILE} ${EMAIL}
+
 done
