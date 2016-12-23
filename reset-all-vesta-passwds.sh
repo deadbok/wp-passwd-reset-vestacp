@@ -83,7 +83,7 @@ do
 	USER=${DIR_PARTS[1]}
 	DOMAIN=${DIR_PARTS[3]}
 
-	PASS=($(openssl rand -base64 12))
+	PASS=($(openssl rand -base64 20))
 	if [ $? -ne 0 ]
 	then
 		echo "ERROR: Failed when creating user password"
@@ -99,12 +99,12 @@ do
 		echo "ERROR: Failed changing user password"
 	fi
 	#Export CSV data for user
-	echo "$2:8083,,$USER,$PASS,$DOMAIN,,$DOMAIN user,Vesta & FTP users" >> ${CSVFILE}
+	echo "$2:8083,,$USER,$PASS,$DOMAIN,,CG Admin\\$DOMAIN user,Vesta & FTP users" >> ${CSVFILE}
 done
 
 echo "Mailing CSV and log"
 for EMAIL in "${EMAILS[@]}"
 do
 	echo "Mailing: ${EMAIL}"
-	template reset_mail.txt | mutt -s "Vesta user password reset information for $2" -a ${CSVFILE} ${LOGFILE} -- ${EMAIL} 
+	template reset_mail.txt | mailx -v -r ${SEND_NAME}  -s "Vesta user password reset information for $2"  -S smtp="${SEND_SMTP}" -S smtp_auth=lgin -S smtp-auth-user="${SEND_NAME}" -S smtp-auth-password="${SEND_PASSWD}" -S smtp-use-starttls -a ${CSVFILE} -a ${LOGFILE} ${EMAIL}
 done
